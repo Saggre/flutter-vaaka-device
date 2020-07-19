@@ -10,10 +10,14 @@ class WeightPage extends StatelessWidget {
       body: BlocBuilder<ConnectionBloc, ConnectionStatus>(
         builder: (context, status) {
           return Center(
-            child: Text(
-              status.toString(),
-              style: TextStyle(fontSize: 24.0),
-            ),
+            child: StreamBuilder<double>(
+                stream: BlocProvider.of<ConnectionBloc>(context).dataStream,
+                builder: (BuildContext context, AsyncSnapshot<double> snapshot) {
+                  return Text(
+                    snapshot.data.floor().toString(),
+                    style: TextStyle(fontSize: 24.0),
+                  );
+                }),
           );
         },
       ),

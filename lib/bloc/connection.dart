@@ -1,11 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:bloc/bloc.dart';
 
 enum ConnectionStatus {
   disconnected,
-  deviceFound,
   connected,
 }
 
@@ -17,60 +16,86 @@ class ConnectionBloc extends Bloc<ConnectionBlocEvent, ConnectionStatus> {
   ConnectionBloc() : super(ConnectionStatus.disconnected);
 
   ConnectionStatus connectionStatus = ConnectionStatus.disconnected;
-  Socket socket;
+  InternetAddress connectedAddress;
+  RawDatagramSocket socket;
+
+  final _controller = StreamController<double>();
+
+  Stream<double> get dataStream => _controller.stream;
 
   @override
   Stream<ConnectionStatus> mapEventToState(ConnectionBlocEvent event) async* {
     switch (event) {
       case ConnectionBlocEvent.connect:
-        String deviceIp = await findDevice();
-        yield connectionStatus;
-        await connect(deviceIp);
-        yield connectionStatus;
+        yield await connect();
         break;
       default:
         addError(Exception('unhandled event: $event'));
     }
   }
 
-  Future<bool> connect(String deviceIp) async {
+  Future<ConnectionStatus> connect() async {
     print("Connecting to device...");
-    Socket.connect(deviceIp, 21212, timeout: Duration(seconds: 60))
-        .then((value) {
-      socket = value;
-      socket.write("Connect");
-      connectionStatus = ConnectionStatus.connected;
-      print("Connected to device");
-    }).catchError((error) {
-      connectionStatus = ConnectionStatus.disconnected;
-      print("Error connecting to device: " + error.toString());
-    });
 
-    return true;
-  }
+    var broadcastAddress = InternetAddress("255.255.255.255");
+    List<int> broadcastData = utf8.encode('vaaka_broadcast');
 
-  /// Finds the device based on received UDP packets
-  Future<String> findDevice() async {
-    RawDatagramSocket datagramSocket =
-        await RawDatagramSocket.bind(InternetAddress.anyIPv4, 21212);
+    socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 21212);
+    socket.broadcastEnabled = true;
 
-    /// Receive response
-    await for (RawSocketEvent evt in datagramSocket.asBroadcastStream()) {
-      if (evt == RawSocketEvent.read) {
-        Datagram packet = datagramSocket.receive();
+    while (true) {
+      print("Broadcasting");
+
+      socket.send(broadcastData, broadcastAddress, 21212);
+
+      Datagram packet = socket.receive();
+      if (packet != null) {
         String dataString = new String.fromCharCodes(packet.data);
-
-        if (dataString == "vaaka") {
-          InternetAddress sender = packet.address;
-          print("Found device at: " + sender.address);
-
-          // Stop listening and close the socket
-          datagramSocket.close();
-          connectionStatus = ConnectionStatus.deviceFound;
-          return sender.address;
+        if (dataString == "vaaka_acknowledged") {
+          connectedAddress = packet.address;
+          print("Found device at: " + connectedAddress.toString());
+          initDataStream();
+          return ConnectionStatus.connected;
         }
       }
+
+      sleep(const Duration(milliseconds: 500));
     }
+  }
+
+  Stream<double> initDataStream() {
+    RegExp floatExp = new RegExp(r"^-?\d+\.\d+$");
+
+    double last;
+
+    Stream<double> weightStream = socket
+        .asBroadcastStream()
+        .map((event) {
+          Datagram packet = socket.receive();
+          if (packet != null) {
+            return new String.fromCharCodes(packet.data);
+          }
+
+          return "";
+        })
+        .where((String dataString) => floatExp.hasMatch(dataString))
+        .map((String dataString) {
+          double weight = double.parse(dataString);
+          return weight;
+        });
+
+    double latestWeight = 0.0;
+    double animatedWeight = 0.0;
+
+    weightStream.listen((double weight) {
+      latestWeight = weight;
+    });
+
+    // 60hz loop
+    Timer timer = Timer.periodic(Duration(microseconds: 16666), (Timer t) {
+      animatedWeight = animatedWeight * 0.7 + latestWeight * 0.3;
+      _controller.sink.add(animatedWeight);
+    });
   }
 
   @override
