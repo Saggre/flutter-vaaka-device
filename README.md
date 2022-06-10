@@ -1,14 +1,21 @@
 # Wireless Smart Scale Application (WIP)
 
-**This project has been abandoned.** In order to continue, the project needs to be documented and refactored to work
+**This project has been abandoned since 2020.** In order to continue, the project needs to be documented and refactored to work
 with a more recent Flutter version.
+
+This app acts as a wireless IoT smart scale's user interface. The scale has three types of functionality, which are
+identified by their UI color:
+
+- ![#0055FE](https://via.placeholder.com/10/0055FE/000000?text=+) Simple weighing
+- ![#FF5700](https://via.placeholder.com/10/FF5700/000000?text=+) Guided cocktail creation
+- ![#00D873](https://via.placeholder.com/10/00D873/000000?text=+) Nutritional value browser and calculator
 
 ## Working principle
 
 The app broadcasts itself in the local network when looking for a scale to connect to.\
-The scale listens to this broadcast and acks when one is found.\
-After the scale has been connected, it starts sending weight packets and receiving tare and calibration commands.\
-Weight packets are parsed and sunk into a stream controller, that can be listened to.
+The scale listens to this broadcast and responds with an ack when one is found.\
+After the app and scale have been connected, the scale starts sending weight packets and receiving tare and calibration
+commands. Weight packets are parsed and sunk into a stream controller, that can be listened to.
 
 ![Scale 3D rendering](.github/assets/FTwP5CW.png)
 
