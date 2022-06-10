@@ -1,14 +1,14 @@
 # Wireless Smart Scale Application (WIP)
 
-**This project has been abandoned since 2020.** In order to continue, the project needs to be documented and refactored to work
-with a more recent Flutter version.
+**This project has been abandoned since 2020.** In order to continue, the project needs to be documented and refactored
+to work with a more recent Flutter version.
 
 This app acts as a wireless IoT smart scale's user interface. The scale has three types of functionality, which are
 identified by their UI color:
 
-- ![#0055FE](https://via.placeholder.com/10/0055FE/000000?text=+) Simple weighing
-- ![#FF5700](https://via.placeholder.com/10/FF5700/000000?text=+) Guided cocktail creation
-- ![#00D873](https://via.placeholder.com/10/00D873/000000?text=+) Nutritional value browser and calculator
+- ![#0055FE](.github/assets/0055FE.png) Simple weighing
+- ![#FF5700](.github/assets/FF5700.png) Guided cocktail creation
+- ![#00D873](.github/assets/00D873.png) Nutritional value browser and calculator
 
 ## Working principle
 
