@@ -37,7 +37,7 @@ class WeightPage extends StatelessWidget {
                           }
 
                           return Text(
-                            snapshot.data?.round().toString() + " g",
+                            (snapshot.data ?? 0).round().toString() + " g",
                             style: TextStyle(
                               fontSize: 64.0,
                               fontWeight: FontWeight.w500,
